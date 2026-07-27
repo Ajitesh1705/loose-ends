@@ -12,25 +12,38 @@ from datetime import datetime, timezone
 from sqlalchemy import select, update
 
 from app.db import SessionLocal
+from app.llm.client import get_llm_client
 from app.llm.extract import extract_commitments
 from app.models import Job, Source
 from app.services.ingest import persist_extraction
+from app.services.resolve import resolve_commitment
 
 POLL_SECONDS = 2
 
 
 def handle_extract(db, job: Job) -> None:
-    """Extract commitments from a source and persist them (with provenance)."""
+    """Extract commitments, persist them (with provenance), then dedupe/resolve."""
     source_id = job.payload.get("source_id")
     source = db.get(Source, uuid.UUID(source_id)) if source_id else None
     if source is None:
         raise ValueError(f"source {source_id!r} not found")
     result = extract_commitments(source)
     ingest = persist_extraction(db, source, result.commitments)
+
+    client = get_llm_client()
+    merged = dup_review = 0
+    for commitment in list(ingest.created):
+        outcome = resolve_commitment(db, commitment, embed=client.embed)
+        if outcome.action == "merged":
+            merged += 1
+        elif outcome.action == "review_possible_duplicate":
+            dup_review += 1
+
     print(
         f"[worker] extracted source {source_id}: "
-        f"{ingest.created_count} kept, {ingest.dropped_count} dropped "
-        f"(hallucinated), {ingest.review_count} to review"
+        f"{ingest.created_count} kept, {ingest.dropped_count} dropped (hallucinated), "
+        f"{ingest.review_count} to review; dedupe: {merged} merged, "
+        f"{dup_review} possible-duplicate"
     )
 
 

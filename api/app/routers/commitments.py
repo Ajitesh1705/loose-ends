@@ -28,6 +28,7 @@ def _serialize(c: Commitment) -> CommitmentOut:
         created_at=c.created_at,
         updated_at=c.updated_at,
         last_touch_at=c.last_touch_at,
+        possible_duplicate_of=c.possible_duplicate_of,
         evidence=[EvidenceOut.model_validate(e) for e in c.evidence],
     )
 

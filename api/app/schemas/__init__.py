@@ -65,6 +65,7 @@ class CommitmentOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     last_touch_at: datetime | None
+    possible_duplicate_of: uuid.UUID | None = None
     evidence: list[EvidenceOut]
 
 

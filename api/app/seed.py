@@ -48,6 +48,36 @@ SEED_SOURCES = [
         ),
     },
     {
+        # Dedupe pair, part 1 (Tuesday call). The same promise is restated in the
+        # confirming email below — Phase 4 should merge them into ONE commitment.
+        "kind": "call_transcript",
+        "title": "Client call — Meridian (pricing deck)",
+        "contact_hint": "Priya Raman",
+        "channel_ts": datetime(2026, 7, 21, 11, 0, tzinfo=timezone.utc),
+        "raw_text": (
+            "Priya: One more thing before we wrap — can you get me the updated pricing "
+            "deck with the new tiers?\n"
+            "Me: Yeah, for sure. I'll send Priya the updated pricing deck by Thursday.\n"
+            "Priya: Perfect, that works."
+        ),
+    },
+    {
+        # Dedupe pair, part 2 (Wednesday confirming email). Restatement markers
+        # ("as discussed", "confirming") + same promise + same contact + due within
+        # the window -> auto-merge into the call commitment above.
+        "kind": "email_thread",
+        "title": "Email — Meridian pricing (confirming)",
+        "contact_hint": "Priya Raman",
+        "channel_ts": datetime(2026, 7, 22, 9, 15, tzinfo=timezone.utc),
+        "raw_text": (
+            "To: Priya Raman\n"
+            "Subject: Re: pricing\n\n"
+            "Hi Priya — as discussed on our call yesterday, just confirming that I'll "
+            "send you the updated pricing deck by Thursday. Shout if anything else is "
+            "needed in the meantime."
+        ),
+    },
+    {
         "kind": "whatsapp_export",
         "title": "WhatsApp — Jordan (logo redesign)",
         "contact_hint": "Jordan Ellis",

@@ -18,6 +18,7 @@ from sqlalchemy import (
     Text,
     func,
 )
+from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -98,6 +99,10 @@ class Commitment(Base):
     last_touch_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     prompt_version: Mapped[str | None] = mapped_column(String(32))
     model: Mapped[str | None] = mapped_column(String(64))
+    what_embedding = mapped_column(Vector(1536), nullable=True)
+    possible_duplicate_of: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("commitments.id", ondelete="SET NULL")
+    )
 
     contact: Mapped["Contact | None"] = relationship(back_populates="commitments")
     evidence: Mapped[list["Evidence"]] = relationship(

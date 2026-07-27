@@ -230,3 +230,65 @@ verifiable against the DB without OpenAI. Only the extraction *call* remains key
   but it means the confidence *threshold* rarely fires on clean inputs — most review
   routing comes from `due_precision`, not confidence. Worth remembering when reading the
   eval's review-queue-precision number in Phase 8.
+
+---
+
+## Phase 4 — Dedupe / resolve (the merge policy — README §5 candidate)
+
+**The policy, precisely.** When a new commitment is created, resolve it against existing
+ones for the same contact:
+
+1. **Candidate gate (cheap SQL).** same `contact_id` · same `direction` (hard
+   requirement) · `status='open'` · `due_at` within ±4 days *or both null* · created
+   within 30 days · has an embedding. This throws away almost everything before any
+   vector math.
+2. **Score the survivors:**
+   `0.60·cosine(what embeddings) + 0.25·lemma_overlap(what) + 0.15·[restatement marker]`,
+   capped at 1.0. Embeddings carry semantics; lemma overlap is a cheap lexical
+   corroborator; the restatement bonus rewards "as discussed / confirming / per our call"
+   — the linguistic signature of a cross-channel repeat. Restatement is detected over the
+   **artifact text**, not just the extracted quote, because "as discussed" lives in the
+   email body, not the promise clause (found this the hard way — see below).
+3. **Bands:** `≥0.80` auto-merge · `0.65–0.80` review as a possible duplicate (store
+   `possible_duplicate_of`, diff the quotes in the UI) · `<0.65` separate.
+4. **On merge:** the **earlier** commitment stays canonical; the new one's evidence rows
+   are re-pointed onto it (one commitment, provenance to a call *and* an email); the more
+   precise `due_at` wins (precision rank exact>day>week>vague>none); `last_touch_at`
+   advances to the later communication; a `merges` row records reason + cosine; the
+   absorbed row is deleted.
+
+**The threshold deviation (0.80, not the plan's 0.85) — this is the decision I'd defend.**
+I calibrated against the fixtures instead of trusting the plan's guessed number. On real
+`text-embedding-3-small` vectors:
+
+| pair | cosine | overlap | restate | score |
+|---|---|---|---|---|
+| pricing **call ↔ confirming email** (true dup) | 0.81 | 0.75 | ✓ | **0.824** |
+| brand-guidelines ↔ pricing (distinct) | 0.42 | 0.11 | ✓ | 0.431 |
+| every other distinct same-contact pair | ≤0.36 | ~0 | — | ≤0.32 |
+
+`text-embedding-3-small` compresses paraphrase similarity into ~0.75–0.90, so 0.85 as an
+auto-merge floor sat **above** the genuine restatement and would have missed the exact
+case the demo exists to show. The true positive (0.824) and the closest false positive
+(0.431) are separated by a ~0.39 gap of empty space — so 0.80 is safe by a wide margin,
+not fitted to one fixture. I moved the number to match the embedding model's actual
+distribution and left a review band underneath for genuinely borderline cases.
+
+**What I'd change with real data.** Learn the threshold from a labelled set of
+duplicate/non-duplicate pairs (logistic regression on the three features, or just the
+ROC-optimal cut) rather than eyeballing a gap on ~14 pairs. Add time-decay to the
+candidate gate (a promise restated 6 months later is a new promise). Handle partial
+merges (an email that fulfils *part* of a multi-part promise). Alias/entity resolution is
+currently name-only; real contacts need email/phone identity.
+
+**What surprised me**
+
+- Two process bugs that each cost a full re-ingest, worth remembering: (1) the **worker
+  doesn't hot-reload** (no `--reload` like uvicorn), so editing `worker.py` does nothing
+  until `docker compose restart worker`; (2) re-pointing evidence with a **bulk SQL
+  UPDATE then `db.delete(absorbed)`** let the ORM's `delete-orphan` cascade delete the
+  rows I'd just moved (the session still thought they belonged to the absorbed parent).
+  Fixed by moving evidence through the ORM relationship so the backref updates.
+- The restatement marker being in the email *body* not the *quote* is why the first real
+  run landed at 0.76 (review) instead of merging — a good reminder that the useful signal
+  often sits in the context, not the extracted span.
