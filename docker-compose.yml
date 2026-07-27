@@ -1,0 +1,71 @@
+services:
+  db:
+    image: pgvector/pgvector:pg15
+    environment:
+      POSTGRES_USER: loose
+      POSTGRES_PASSWORD: loose
+      POSTGRES_DB: looseends
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loose -d looseends"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://loose:loose@db:5432/looseends
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      # Host 8001 -> container 8000. Host 8000 is taken by another local process;
+      # remapping avoids the collision and the localhost:8000 ambiguity.
+      - "8001:8000"
+    # On start: run migrations, seed if empty, then serve with reload for dev.
+    command: >
+      sh -c "alembic upgrade head &&
+             python -m app.seed &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    volumes:
+      - ./api:/app
+
+  worker:
+    build: ./api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://loose:loose@db:5432/looseends
+    depends_on:
+      db:
+        condition: service_healthy
+      api:
+        condition: service_started
+    command: sh -c "python -m app.worker"
+    volumes:
+      - ./api:/app
+
+  web:
+    build: ./web
+    env_file: .env
+    environment:
+      # Server-side calls (Next.js server component) reach api over the compose net.
+      API_BASE_INTERNAL: http://api:8000
+      # Browser-side calls reach the api via the published port on localhost.
+      NEXT_PUBLIC_API_BASE: http://localhost:8001
+    depends_on:
+      - api
+    ports:
+      # Host 3001 -> container 3000 (host 3000 is taken by another local process).
+      - "3001:3000"
+    command: sh -c "npm run dev"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+
+volumes:
+  pgdata:
