@@ -6,17 +6,36 @@ handler.
 """
 
 import time
+import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import select, update
 
 from app.db import SessionLocal
-from app.models import Job
+from app.llm.extract import extract_commitments
+from app.models import Job, Source
+from app.services.ingest import persist_extraction
 
 POLL_SECONDS = 2
 
-# kind -> handler(session, job). Populated by later phases.
-HANDLERS: dict = {}
+
+def handle_extract(db, job: Job) -> None:
+    """Extract commitments from a source and persist them (with provenance)."""
+    source_id = job.payload.get("source_id")
+    source = db.get(Source, uuid.UUID(source_id)) if source_id else None
+    if source is None:
+        raise ValueError(f"source {source_id!r} not found")
+    result = extract_commitments(source)
+    ingest = persist_extraction(db, source, result.commitments)
+    print(
+        f"[worker] extracted source {source_id}: "
+        f"{ingest.created_count} kept, {ingest.dropped_count} dropped "
+        f"(hallucinated), {ingest.review_count} to review"
+    )
+
+
+# kind -> handler(session, job).
+HANDLERS: dict = {"extract": handle_extract}
 
 
 def _claim_one(db) -> Job | None:

@@ -186,3 +186,47 @@ verifiable against the DB without OpenAI. Only the extraction *call* remains key
 - The plan's literal gating list and its worked example contradict each other; the
   example is the better spec. Good reminder that the DoD ("a note a non-technical person
   could act on") is the real target, not the bullet list.
+
+---
+
+## Phase 2 — part 2: the LLM half (completed once the key landed)
+
+**What changed**
+
+- `llm/client.py` — the single choke point for every OpenAI call: retries w/ exponential
+  backoff (1/2/4s, 3 attempts) on transient errors, 45s timeout, `max_retries=0` on the
+  SDK (we own retries), sha256 caching in `llm_cache`, token/latency/cost logging to
+  `llm_calls`, and a one-shot schema-repair pass. Structured calls go through the
+  **Responses API** `responses.parse(text_format=…)`, which emits a strict JSON schema
+  from the Pydantic model.
+- `llm/extract.py` — loads `extract_v1.md`, frames the artifact (kind/date/hint/"Me"),
+  calls the client at `temperature=0`.
+- `worker.py` — registered the `extract` handler: extract → `persist_extraction` → commit.
+
+**Model selection (build-time, verified against `GET /v1/models`)**
+
+- The account has the gpt-5.x reasoning family, but I chose **gpt-4.1-mini** (extract) /
+  **gpt-4.1** (draft). Reason: the pipeline's design leans on `temperature` (0 for
+  deterministic extraction, higher for drafts), which the reasoning models don't honour;
+  and extraction wants low latency/cost with no reasoning-token overhead. Documented in
+  `.env.example`. Embeddings: `text-embedding-3-small` (1536 dims) as specified.
+- Also bumped the SDK: `openai 1.57 → 2.48` — 1.57 predates the Responses API entirely.
+
+**Live results on the 3 seed sources**
+
+- 8 commitments kept, **0 hallucinations**, **0 span mismatches** (every stored span
+  indexes back to the exact source substring), **0 evidence-invariant violations**.
+- The extractor correctly **skipped the third-party promise** ("my designer will send you
+  the brand colors") and the polite non-commitment ("let's find time to review the
+  funnel") — exactly the prompt's intent.
+- Confidence gating live: "by early next week" and "for the next two weeks…" → review,
+  each with a phrase-quoting note.
+- Cost ≈ **$0.0007 / source**, latency 4–9s. Second run of the same source is a cache hit
+  ($0, no tokens) — the demo-reruns-a-lot requirement pays off immediately.
+
+**What surprised me**
+
+- gpt-4.1-mini returned `confidence: 1.0` on every clear commitment. Fine for the ledger,
+  but it means the confidence *threshold* rarely fires on clean inputs — most review
+  routing comes from `due_precision`, not confidence. Worth remembering when reading the
+  eval's review-queue-precision number in Phase 8.
