@@ -105,3 +105,44 @@ The LLM client, the `extract` worker handler, and the end-to-end DoD run land in
 - `rapidfuzz.partial_ratio_alignment` gives back `dest_start`/`dest_end` on the haystack,
   which makes fuzzy span location a one-liner once both strings are lowercased (lowercasing
   is length-preserving, so the returned indices map straight back onto the original text).
+
+---
+
+## Phase 5 — Deterministic decay (built early, while blocked on the OpenAI key)
+
+Pulled Phase 5 forward because it is 100% LLM-free and unblocks nothing downstream by
+waiting. Phases 3/4/6 still follow after Phase 2's LLM half lands.
+
+**What changed**
+
+- `services/decay.py` — `decay_score(...)` pure function → `DecayResult(score 0–100,
+  band, explanation: list[str])`. No DB, no network, no LLM.
+- `tests/test_decay.py` — 29 tests: an 12-row band table (every band incl. `cooling`),
+  a range+explanation property check over the table, and relational tests (they_owe vs
+  i_owe, recent-touch vs silence, cadence within/exceeded, overdue precision damping,
+  no-recorded-contact, closed short-circuit). Every branch of the scorer is exercised.
+
+**Decisions — the model, and why it's deterministic (README §5 material)**
+
+- Two independent pressures sum into the score: **silence** (≤70 pts) and **deadline**
+  (≤~55 pts), capped at 100. This is the whole reason staleness is *not* an LLM call: an
+  operator has to trust and defend "why is this cold?", so every point is traceable to a
+  named factor rendered in the tooltip. An LLM's "feels stale" is unauditable and
+  non-reproducible; a demo about *commitments slipping* can't hand-wave the slippage.
+- **`they_owe` decays ~20% faster than `i_owe`.** Rationale: the operator controls their
+  own promises but must *chase* others'; silence on a they_owe is the more dangerous
+  signal (it's the thing quietly falling through). Defensible either way — noted as a
+  tunable, and it's the kind of thing I'd A/B with real data.
+- **Deadline pressure is weighted by `due_precision`** (exact/day 1.0, week 0.75,
+  vague 0.5). A vague "next week" shouldn't scream "overdue" as loudly as a hard date.
+  A past-due item is still banded `overdue` regardless of precision, but the score (and
+  the tooltip) reflect the uncertainty.
+- **No-deadline items** decay on silence alone and *can* reach `cold` (~21 days), but
+  never `overdue` (nothing to be over).
+- Closed items (`done`/`dropped`/`superseded`) short-circuit to score 0.
+
+**What surprised me**
+
+- Getting a clean `cooling` band out of the table forced me to be explicit about the
+  silence ramp (21 days → 70 pts), which is exactly the kind of number the tooltip has to
+  justify. Writing the test made the model honest.
