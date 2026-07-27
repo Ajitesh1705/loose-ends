@@ -54,3 +54,54 @@ _Things I wanted to build but deliberately didn't. Add here instead of building.
 **Rejected**
 
 - (nothing yet)
+
+---
+
+## Phase 2 — Extraction with provenance (part 1: deterministic plumbing)
+
+Built the key-independent half of Phase 2 first, while waiting on an `OPENAI_API_KEY`.
+The LLM client, the `extract` worker handler, and the end-to-end DoD run land in part 2.
+
+**What changed**
+
+- `services/locate.py` — locate a model quote in the source in three escalating passes:
+  exact → normalized-whitespace+case-insensitive (with an index map back to the original
+  offsets) → fuzzy (`rapidfuzz.partial_ratio`, accepted only at ≥90). Returns the span or
+  `None`.
+- `services/dates.py` — `resolve_due(due_raw, anchor)` turns a raw deadline phrase into
+  `due_at` + `due_precision`, deterministically, anchored on the source timestamp. The
+  LLM never resolves dates.
+- `services/prepare.py` — the pure transform `candidate → PreparedCommitment | Dropped`.
+  This is where provenance is enforced: **an unlocatable quote is dropped as a
+  hallucination**, no DB, no network, fully unit-tested.
+- `schemas/extraction.py` — the strict structured-output contract (`ExtractionResult`).
+- `prompts/extract_v1.md` — versioned prompt with the "no inferred/polite/retracted/
+  third-party/conditional promises" rules and the "quote must be verbatim, never resolve
+  dates" constraints.
+- `POST /sources` — creates a source and enqueues an `extract` job; input length capped
+  at `MAX_INPUT_CHARS` (413 on overflow).
+- Tests: `test_locate.py`, `test_dates.py`, `test_prepare.py` (incl. the DoD
+  unlocatable-quote-dropped assertion). 23 tests green.
+
+**Decisions**
+
+- **Stored quote = the located source substring**, not the model's returned text. Even a
+  fuzzy/normalized match stores the real source characters, so the UI highlight is always
+  exact and provenance never drifts from the artifact.
+- **`due_precision` semantics** (drive Phase 3 review routing): `exact` (specific
+  date/time) · `day` (specific calendar day) · `week` (a week-ish window: "next week",
+  "end of month") · `vague` (deadline implied but unresolvable, e.g. "a couple of days",
+  or a non-empty phrase we couldn't parse) · `none` (no deadline). All day/week deadlines
+  resolve to **end-of-day (23:59:59)** in the anchor's timezone — "by Friday" means end of
+  Friday.
+- **Date resolution is rule-based, not `dateutil`-first.** Relative phrases ("by Friday",
+  "next week", "end of month") are matched by explicit ordered rules; `dateutil` is only a
+  last-resort fallback for phrases containing a digit or month name. Fuzzy free-text date
+  parsing is too eager and silently invents dates — exactly the failure the eval's
+  hallucinated-deadline metric is meant to catch.
+
+**What surprised me**
+
+- `rapidfuzz.partial_ratio_alignment` gives back `dest_start`/`dest_end` on the haystack,
+  which makes fuzzy span location a one-liner once both strings are lowercased (lowercasing
+  is length-preserving, so the returned indices map straight back onto the original text).
