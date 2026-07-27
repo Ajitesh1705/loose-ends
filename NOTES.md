@@ -9,7 +9,10 @@ surprised me, what I rejected.
 
 _Things I wanted to build but deliberately didn't. Add here instead of building._
 
-- (nothing yet)
+- **Phase 7 mock-inbound webhook** (optional in the plan; the plan's own cut-order says
+  cut this first). The "runs on messages" story is already told by `POST /sources` →
+  worker → ledger; a fake webhook is the same pipeline with a different door. Deferred,
+  not core.
 
 ---
 
@@ -292,3 +295,31 @@ currently name-only; real contacts need email/phone identity.
 - The restatement marker being in the email *body* not the *quote* is why the first real
   run landed at 0.76 (review) instead of merging — a good reminder that the useful signal
   often sits in the context, not the extracted span.
+
+---
+
+## Phase 7 — Grounded drafts
+
+**What changed**
+
+- `POST /commitments/{id}/draft` → `llm/draft.py`. Pulls each evidence quote + ±400 chars
+  of surrounding source, frames the commitment + tone (`warm`/`direct`/`brief`), and asks
+  the draft model (gpt-4.1, temp 0.4) for `{subject?, body, grounding_quote_indices}`.
+- **Deterministic date-hallucination guard** (`_unsupported_dates`): scan the body for
+  weekday/month/numeric/relative date tokens; any not present in the grounding text or
+  the commitment's own due date triggers **one strict regeneration**, then the draft is
+  returned **flagged** rather than trusted. Unit-tested (`test_draft_guard.py`).
+
+**Live results**
+
+- Pricing (merged, warm): grounded on BOTH the call and the email evidence; "Thursday"
+  traced to source; 30 words; not flagged.
+- Brand guidelines (they_owe, brief): a 23-word nudge quoting "updated brand guidelines …
+  on-spec", "next week" traced to source.
+
+**What surprised me**
+
+- The date guard's month regex first flagged the word **"deck"** — it starts with "dec"
+  (December). Tightened so month names only count when paired with a day/year. A good
+  argument for keeping the guard deterministic and testable: an LLM self-check would never
+  have surfaced that class of bug so cheaply.

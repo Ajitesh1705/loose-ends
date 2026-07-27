@@ -5,8 +5,10 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_session
+from app.llm.draft import generate_draft
 from app.models import Commitment
 from app.schemas import CommitmentOut, ConfirmPayload, EvidenceOut, OkResponse
+from app.schemas.draft import DraftRequest, DraftResponse
 from app.services.contacts import get_or_create_contact
 
 router = APIRouter(tags=["commitments"])
@@ -79,6 +81,19 @@ def confirm(
     c.ambiguity_note = None
     db.commit()
     return _serialize(_load(db, commitment_id))
+
+
+@router.post("/commitments/{commitment_id}/draft", response_model=DraftResponse)
+def draft(
+    commitment_id: uuid.UUID,
+    body: DraftRequest,
+    db: Session = Depends(get_session),
+) -> DraftResponse:
+    """Generate a short, source-grounded follow-up for this commitment."""
+    c = _load(db, commitment_id)
+    if not c.evidence:
+        raise HTTPException(status_code=409, detail="commitment has no evidence to ground a draft")
+    return generate_draft(db, c, body.tone)
 
 
 @router.post("/commitments/{commitment_id}/reject", response_model=OkResponse)
