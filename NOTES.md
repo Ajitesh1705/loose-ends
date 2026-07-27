@@ -146,3 +146,43 @@ waiting. Phases 3/4/6 still follow after Phase 2's LLM half lands.
 - Getting a clean `cooling` band out of the table forced me to be explicit about the
   silence ramp (21 days → 70 pts), which is exactly the kind of number the tooltip has to
   justify. Writing the test made the model honest.
+
+---
+
+## Phase 3 — Confidence gating + review queue (deterministic core, no key needed)
+
+Built the gating logic, the persist pipeline, and the review endpoints — all
+verifiable against the DB without OpenAI. Only the extraction *call* remains key-gated.
+
+**What changed**
+
+- `services/gate.py` — pure gating → `GateDecision(state, ambiguity_note)`.
+- `services/contacts.py` — get-or-create by case-insensitive name/alias (rich matching
+  is Phase 4).
+- `services/ingest.py` — `persist_extraction(db, source, candidates)`: the full ingest
+  pipeline minus the LLM call. Prepares each candidate, drops hallucinations, resolves
+  the contact, gates, and writes commitment + evidence. **Does not commit** (caller owns
+  the unit of work). Enforces the evidence invariant in code.
+- `routers/commitments.py` — `GET /review`, `POST /commitments/{id}/confirm` (with
+  edits), `POST /commitments/{id}/reject`.
+- Test infra: `conftest.py` with a rolled-back-transaction DB session + a TestClient
+  dependency override, so DB/endpoint tests never touch demo data. New tests:
+  `test_gate`, `test_ingest`, `test_review_endpoints`. **69 tests green.**
+
+**Deliberate deviation from the plan (working-rule §5: deviate on paper, not silently)**
+
+- Plan §Phase 3 says route to review when `due_precision in (vague, none)`. I route
+  **`(week, vague)`** instead, and treat `none` as *not* a trigger. Reasoning: `none`
+  means there is genuinely no deadline — nothing to review. Meanwhile the plan's own
+  ambiguity-note *example* is about **"next week"**, which is a week-granularity window
+  with no specific day — clearly review-worthy. So `week` must trigger review and `none`
+  must not. I also reclassified `end of week`→Friday and `end of month`→last-day as
+  precision **`day`** (they pin a specific day), leaving `week` for genuine windows
+  ("next week", "this week") and `vague` for looser phrases ("a couple of days", "next
+  month", unresolved). The gate note quotes the actual phrase, never "low confidence".
+
+**What surprised me**
+
+- The plan's literal gating list and its worked example contradict each other; the
+  example is the better spec. Good reminder that the DoD ("a note a non-technical person
+  could act on") is the real target, not the bullet list.

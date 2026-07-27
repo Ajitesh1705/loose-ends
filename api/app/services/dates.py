@@ -82,14 +82,15 @@ def resolve_due(due_raw: str | None, anchor: datetime) -> DueResolution:
         d = (anchor + timedelta(days=2)).date()
         return DueResolution(_at_end_of_day(anchor, d), "day", "day_after_tomorrow")
 
-    # end of week
+    # end of week -> Friday: a specific day, so precision 'day'
     if re.search(r"\b(end of (the )?week|eow)\b", s):
-        return DueResolution(_friday_of_week(anchor), "week", "end_of_week")
-    # end of month
+        return DueResolution(_friday_of_week(anchor), "day", "end_of_week")
+    # end of month -> last calendar day: also a specific day
     if re.search(r"\bend of (the )?month\b", s) or s == "eom":
-        return DueResolution(_end_of_month(anchor), "week", "end_of_month")
+        return DueResolution(_end_of_month(anchor), "day", "end_of_month")
 
-    # next week (with an "early" nuance -> Monday, else Friday of next week)
+    # "next week" names a window, not a day -> precision 'week' (routes to review).
+    # "early next week" resolves to a Monday but is still a hedge, so also 'week'.
     if "next week" in s:
         if "early" in s or "start of" in s or "beginning of" in s:
             monday = _weekday_target(anchor, 0, is_next=True)
@@ -97,8 +98,9 @@ def resolve_due(due_raw: str | None, anchor: datetime) -> DueResolution:
         return DueResolution(_friday_of_week(anchor, weeks_ahead=1), "week", "next_week")
     if "this week" in s:
         return DueResolution(_friday_of_week(anchor), "week", "this_week")
+    # "next month" is looser than a week window -> vague
     if "next month" in s:
-        return DueResolution(_end_of_month(anchor, months_ahead=1), "week", "next_month")
+        return DueResolution(_end_of_month(anchor, months_ahead=1), "vague", "next_month")
     if re.search(r"\b(this month|later this month|sometime this month)\b", s):
         return DueResolution(_end_of_month(anchor), "vague", "this_month")
 

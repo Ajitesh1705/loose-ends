@@ -29,6 +29,7 @@ class PreparedCommitment:
     end_char: int
     span_method: str
     span_score: float
+    due_raw: str | None
     due_at: datetime | None
     due_precision: str
     due_rule: str
@@ -59,6 +60,7 @@ def prepare_commitment(
         end_char=span.end,
         span_method=span.method,
         span_score=span.score,
+        due_raw=candidate.due_raw,
         due_at=due.due_at,
         due_precision=due.precision,
         due_rule=due.rule,

@@ -37,3 +37,45 @@ class SourceOut(BaseModel):
 
 class SourceDetail(SourceOut):
     raw_text: str
+
+
+class EvidenceOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    source_id: uuid.UUID
+    start_char: int
+    end_char: int
+    quote: str
+    is_primary: bool
+
+
+class CommitmentOut(BaseModel):
+    id: uuid.UUID
+    direction: str
+    contact_id: uuid.UUID | None
+    contact_name: str | None
+    what: str
+    due_at: datetime | None
+    due_precision: str
+    status: str
+    confidence: float
+    state: str
+    ambiguity_note: str | None
+    created_at: datetime
+    updated_at: datetime
+    last_touch_at: datetime | None
+    evidence: list[EvidenceOut]
+
+
+class ConfirmPayload(BaseModel):
+    """Operator edits when confirming a review item. All fields optional."""
+
+    what: str | None = None
+    who: str | None = None
+    due_at: datetime | None = None
+    due_precision: Literal["exact", "day", "week", "vague", "none"] | None = None
+
+
+class OkResponse(BaseModel):
+    ok: bool = True

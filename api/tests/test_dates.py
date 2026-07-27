@@ -48,14 +48,16 @@ def test_early_next_week_is_monday():
 
 
 def test_end_of_week():
+    # end of week pins a specific day (Friday), so precision is 'day', not 'week'
     r = resolve_due("by end of week", ANCHOR)
-    assert r.precision == "week"
+    assert r.precision == "day"
     assert r.due_at.weekday() == 4
 
 
 def test_end_of_month():
+    # end of month pins the last calendar day -> precision 'day'
     r = resolve_due("end of month", ANCHOR)
-    assert r.precision == "week"
+    assert r.precision == "day"
     assert r.due_at.month == 7
     assert r.due_at.day == 31
 
