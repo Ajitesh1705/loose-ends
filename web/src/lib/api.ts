@@ -1,23 +1,65 @@
-// Server components reach the API over the compose network (API_BASE_INTERNAL).
-// Browser code uses NEXT_PUBLIC_API_BASE. Keep the two separate.
+// Browser-side API client. All calls run from the client (the app is interactive:
+// drawers, polling, drafts), so everything uses the public base.
+import type {
+  DraftResponse,
+  LedgerItem,
+  ReviewItem,
+  Source,
+  SourceDetail,
+} from "./types";
 
-export const SERVER_API_BASE =
-  process.env.API_BASE_INTERNAL ?? "http://localhost:8000";
+export const API =
+  process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8001";
 
-export const BROWSER_API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:8000";
-
-export type Source = {
-  id: string;
-  kind: "call_transcript" | "email_thread" | "whatsapp_export" | "session_note";
-  title: string;
-  channel_ts: string | null;
-  contact_hint: string | null;
-  created_at: string;
-};
-
-export async function fetchSources(): Promise<Source[]> {
-  const res = await fetch(`${SERVER_API_BASE}/sources`, { cache: "no-store" });
-  if (!res.ok) throw new Error(`GET /sources failed: ${res.status}`);
+async function j<T>(res: Response): Promise<T> {
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`${res.status} ${res.statusText} — ${detail}`);
+  }
   return res.json();
 }
+
+export const getLedger = () =>
+  fetch(`${API}/commitments`, { cache: "no-store" }).then(j<LedgerItem[]>);
+
+export const getReview = () =>
+  fetch(`${API}/review`, { cache: "no-store" }).then(j<ReviewItem[]>);
+
+export const getSources = () =>
+  fetch(`${API}/sources`, { cache: "no-store" }).then(j<Source[]>);
+
+export const getSource = (id: string) =>
+  fetch(`${API}/sources/${id}`, { cache: "no-store" }).then(j<SourceDetail>);
+
+export const createSource = (body: {
+  kind: string;
+  title: string;
+  raw_text: string;
+  channel_ts?: string | null;
+  contact_hint?: string | null;
+}) =>
+  fetch(`${API}/sources`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }).then(j<{ id: string; job_id: string }>);
+
+export const confirmCommitment = (
+  id: string,
+  body: { what?: string; who?: string; due_at?: string | null; due_precision?: string }
+) =>
+  fetch(`${API}/commitments/${id}/confirm`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }).then(j);
+
+export const rejectCommitment = (id: string) =>
+  fetch(`${API}/commitments/${id}/reject`, { method: "POST" }).then(j);
+
+export const draftCommitment = (id: string, tone: string) =>
+  fetch(`${API}/commitments/${id}/draft`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tone }),
+  }).then(j<DraftResponse>);

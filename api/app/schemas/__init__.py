@@ -69,6 +69,35 @@ class CommitmentOut(BaseModel):
     evidence: list[EvidenceOut]
 
 
+class DecayOut(BaseModel):
+    score: float
+    band: str
+    explanation: list[str]
+
+
+class MergeOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    reason: str
+    similarity: float | None
+    created_at: datetime
+
+
+class LedgerItem(CommitmentOut):
+    decay: DecayOut
+    merges: list[MergeOut] = []
+
+
+class DuplicateInfo(BaseModel):
+    id: uuid.UUID
+    what: str
+    quote: str | None
+
+
+class ReviewItem(CommitmentOut):
+    duplicate_of: DuplicateInfo | None = None
+
+
 class ConfirmPayload(BaseModel):
     """Operator edits when confirming a review item. All fields optional."""
 

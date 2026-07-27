@@ -3,17 +3,82 @@
 @tailwind utilities;
 
 :root {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --paper: #fbfaf7;
-  --ink: #1a1a17;
-  --muted: #6b6a63;
-  --line: #e6e3db;
+  /* Cool paper + ink — deliberately not the cream/terracotta default. */
+  --paper: #f7f7f5;
+  --surface: #ffffff;
+  --ink: #17181c;
+  --muted: #6c6f76;
+  --faint: #9a9ca2;
+  --line: #e6e5e1;
+  --line-strong: #d6d5d0;
+  --accent: #2f5d50; /* deep ledger green — actions only */
+  --accent-ink: #ffffff;
+
+  /* Decay temperature scale — the ONLY place color encodes meaning. Desaturated. */
+  --fresh: #4b7f74;
+  --warm: #b3862f;
+  --cooling: #b5673a;
+  --cold: #a24b3c;
+  --overdue: #8f3a34;
+
+  /* Three type voices = the product thesis.
+     serif  = the human promise · mono = the deterministic accounting · sans = chrome */
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 html,
 body {
+  margin: 0;
+  padding: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-sans);
+  font-family: var(--sans);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Utility type-voice classes */
+.serif {
+  font-family: var(--serif);
+}
+.mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+.eyebrow {
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 600;
+}
+
+/* Focus visibility — quality floor */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Evidence highlight in the source drawer */
+mark.evidence {
+  background: #fdf2c9;
+  color: inherit;
+  padding: 0.5px 1px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px #f0e2a6;
 }
