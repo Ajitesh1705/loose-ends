@@ -23,6 +23,7 @@ web/next-env.d.ts
 .DS_Store
 .idea/
 .vscode/
-
+NOTES.md
+plan.md
 # Postgres data volume (if ever bind-mounted)
 pgdata/
