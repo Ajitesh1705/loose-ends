@@ -57,6 +57,14 @@ export const confirmCommitment = (
 export const rejectCommitment = (id: string) =>
   fetch(`${API}/commitments/${id}/reject`, { method: "POST" }).then(j);
 
+// Deployed serverless there is no always-on worker, so the queue is drained on
+// demand. Locally the polling worker usually claims the job first and this returns
+// `processed: 0` — harmless either way.
+export const drainJobs = () =>
+  fetch(`${API}/jobs/drain`, { method: "POST" }).then(
+    j<{ processed: number; pending: number }>
+  );
+
 export const draftCommitment = (id: string, tone: string) =>
   fetch(`${API}/commitments/${id}/draft`, {
     method: "POST",

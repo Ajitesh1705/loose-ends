@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createSource, getSource, getSources } from "@/lib/api";
+import { createSource, drainJobs, getSource, getSources } from "@/lib/api";
 import { KIND_LABEL, type Source } from "@/lib/types";
 
 const KINDS = ["call_transcript", "email_thread", "whatsapp_export", "session_note"];
@@ -37,7 +37,9 @@ export function IngestPanel({
     if (!text.trim() || !title.trim()) return;
     setStatus("extracting");
     await createSource({ kind, title, raw_text: text, contact_hint: hint || null });
-    // The worker is a poller; refresh a few times as it lands.
+    // Nudge the queue (no-op when the local polling worker got there first), then
+    // refresh a few times as the extraction lands.
+    drainJobs().catch(() => {});
     let n = 0;
     const tick = () => {
       onRefresh();

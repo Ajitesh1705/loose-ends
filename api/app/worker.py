@@ -1,8 +1,9 @@
 """Postgres-backed job worker — one polling process. No Redis, no Celery.
 
-Phase 1: the loop exists and claims jobs, but no handlers are registered yet, so it
-just marks unknown jobs failed with a clear error. Phase 2 registers the `extract`
-handler.
+`run_once()` claims and runs a single job; it has two drivers. Locally, `main()`
+polls it forever (the compose `worker` service). On serverless there is no
+always-on process, so `routers/jobs.py` drives the same function over HTTP.
+Claiming uses SKIP LOCKED, so both drivers can run at once without double work.
 """
 
 import time
@@ -72,7 +73,7 @@ def _claim_one(db) -> Job | None:
     return db.get(Job, job_id)
 
 
-def _run_once() -> bool:
+def run_once() -> bool:
     with SessionLocal() as db:
         job = _claim_one(db)
         if job is None:
@@ -99,7 +100,7 @@ def main() -> None:
     print("[worker] started, polling every", POLL_SECONDS, "s")
     while True:
         try:
-            worked = _run_once()
+            worked = run_once()
         except Exception as exc:  # keep the loop alive through transient DB errors
             print(f"[worker] loop error: {exc}")
             worked = False

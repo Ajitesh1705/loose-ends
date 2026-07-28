@@ -109,3 +109,10 @@ class ConfirmPayload(BaseModel):
 
 class OkResponse(BaseModel):
     ok: bool = True
+
+
+class DrainResult(BaseModel):
+    """What one `/jobs/drain` call got through, and what it left for the next one."""
+
+    processed: int
+    pending: int

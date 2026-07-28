@@ -11,7 +11,17 @@ class Base(DeclarativeBase):
 
 
 _settings = get_settings()
-engine = create_engine(_settings.database_url, pool_pre_ping=True, future=True)
+# pool_recycle: serverless instances idle between requests and hosted Postgres drops
+# idle connections — recycle before the far end does. pool_size stays small because
+# each function instance keeps its own pool.
+engine = create_engine(
+    _settings.database_url,
+    pool_pre_ping=True,
+    pool_recycle=280,
+    pool_size=2,
+    max_overflow=3,
+    future=True,
+)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 

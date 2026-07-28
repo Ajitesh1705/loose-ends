@@ -27,3 +27,5 @@ NOTES.md
 plan.md
 # Postgres data volume (if ever bind-mounted)
 pgdata/
+.vercel
+.env*.local

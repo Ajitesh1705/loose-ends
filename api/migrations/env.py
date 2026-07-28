@@ -1,8 +1,9 @@
-import os
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
+
+from app.config import get_settings
 
 # Import models so target_metadata is populated (used for --autogenerate).
 from app.db import Base
@@ -10,10 +11,9 @@ import app.models  # noqa: F401
 
 config = context.config
 
-# DB URL comes from the environment, never checked in.
-db_url = os.environ.get(
-    "DATABASE_URL", "postgresql+psycopg://loose:loose@db:5432/looseends"
-)
+# DB URL comes from the environment, never checked in. Going through Settings means a
+# hosted driverless URL (Neon et al.) gets the same psycopg fix the app applies.
+db_url = get_settings().database_url
 config.set_main_option("sqlalchemy.url", db_url)
 
 if config.config_file_name is not None:

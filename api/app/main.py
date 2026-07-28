@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import admin, commitments, health, sources
+from app.routers import admin, commitments, health, jobs, sources
 
 app = FastAPI(title="Loose Ends API")
 
@@ -17,3 +17,4 @@ app.include_router(health.router)
 app.include_router(sources.router)
 app.include_router(commitments.router)
 app.include_router(admin.router)
+app.include_router(jobs.router)
