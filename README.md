@@ -44,10 +44,11 @@ one optional feature I cut mid-build (the mock-inbound webhook).
 - **Drafts grounded follow-ups** that quote the specific thing discussed, with a
   hallucinated-date guard.
 
-**Run it:** locally in one command (see §6). A public deploy is one auth step away — see
-[`deploy/README.md`](./deploy/README.md); it isn't live because it needs a GCP project +
-Vercel login I don't have credentials for. _(90-second Loom: TODO — record against the
-local demo.)_
+**Try it:** **https://loose-ends-inky.vercel.app** — web, API, and Postgres all on Vercel
+(Neon for pgvector). `POST /api/demo/reset` restores the seeded state for the next
+visitor. Locally it's one command (see §6). The deploy shape, and the one thing that
+changes on serverless — no always-on worker, so the job queue drains over HTTP — are in
+[`deploy/README.md`](./deploy/README.md). _(90-second Loom: TODO.)_
 
 ## 3. The five non-negotiables, and how each is implemented
 
