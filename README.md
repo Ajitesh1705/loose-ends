@@ -8,30 +8,7 @@ over that one table. This builds the ledger, not the CRM.
 
 ---
 
-## 1. What I didn't build, and why
-
-This is the important section. The scope was cut deliberately so the five things that
-matter could be built properly.
-
-- **Real OAuth (Gmail / WhatsApp / Calendar)** — the product thesis is "runs on your
-  messages," but wiring real inboxes is integration plumbing that proves nothing about
-  the hard part (turning talk into a trustworthy commitment). `POST /sources` + a mock
-  inbound is the same pipeline with a cheaper door.
-- **Multi-tenancy / auth beyond a demo** — a single-tenant ledger exercises every
-  interesting behavior; tenancy is table-stakes engineering, not the risk.
-- **Billing** — irrelevant to whether extraction is trustworthy.
-- **A contacts / deals / pipeline UI** — that's the CRM this deliberately is *not*. The
-  commitment ledger is the substrate a pipeline would sit on; building the pipeline first
-  would be decorating an unproven foundation.
-- **A chat-with-your-data box** — impressive-looking, but it hides the provenance and
-  confidence work behind a text box. The ledger shows the receipts instead.
-- **Dark mode / settings / onboarding / mobile layouts** — polish that competes for the
-  time the eval harness needed.
-
-The rejected-scope log in [`NOTES.md`](./NOTES.md) has the running list, including the
-one optional feature I cut mid-build (the mock-inbound webhook).
-
-## 2. What it does
+## 1. What it does
 
 - **Extracts commitments** from calls, emails, WhatsApp exports, and session notes, each
   linked to the **exact source span** that produced it.
@@ -50,7 +27,7 @@ visitor. Locally it's one command (see §6). The deploy shape, and the one thing
 changes on serverless — no always-on worker, so the job queue drains over HTTP — are in
 [`deploy/README.md`](./deploy/README.md). _(90-second Loom: TODO.)_
 
-## 3. The five non-negotiables, and how each is implemented
+## 2. The five non-negotiables, and how each is implemented
 
 1. **Provenance** — the model returns a *verbatim quote*, never offsets; `services/locate.py`
    finds the span (exact → normalized-whitespace → fuzzy ≥90) and stores the real source
@@ -69,7 +46,7 @@ changes on serverless — no always-on worker, so the job queue drains over HTTP
    and generates a short follow-up; a deterministic date guard regenerates once, then flags
    any date not present in the source.
 
-## 4. How well it works
+## 3. How well it works
 
 From `python evals/run_eval.py` over 24 hand-labelled fixtures (coach / agency /
 freelancer, with deliberate hard cases; **not tuned to flatter the numbers**):
@@ -89,33 +66,7 @@ strictness, not extraction failure** — half the misses are the same commitment
 differently ("Send the invoice" vs "Get the invoice to you") tripping a lexical match bar.
 Zero hallucinated deadlines and zero unlocatable quotes are the numbers I'd stand behind.
 
-## 5. The one decision I'd defend hardest
-
-**I lowered the auto-merge threshold from the spec's 0.85 to 0.80, calibrated from the
-data rather than guessed.**
-
-The dedupe score is `0.60·cosine(embeddings) + 0.25·lemma_overlap + 0.15·restatement`.
-`text-embedding-3-small` compresses paraphrase similarity into ~0.75–0.90, so on the
-fixtures a *genuine* cross-channel restatement (a call + its confirming email) scores
-**0.82**, while the closest *distinct* same-contact pair scores **0.43**. A 0.85 floor
-sits above the true positives — it would miss the exact case the demo exists to show. The
-true and false clusters are separated by a ~0.39 gap of empty space, so 0.80 is safe by a
-wide margin, not fitted to one example.
-
-**The tradeoff I accepted:** a lower floor trades a little dedupe precision for recall. I
-mitigated it two ways — a hard *same-direction, same-contact, ±4-day* gate before any
-scoring, and a 0.65–0.80 review band so borderline pairs get a human instead of a silent
-merge. The eval bears this out: dedupe precision stays 1.00 with recall 1.00. **With real
-data I'd learn the threshold from labelled pairs (logistic regression on the three
-features) instead of eyeballing a gap on a handful.** The full policy and what I'd change
-at scale are in [`NOTES.md`](./NOTES.md).
-
-The same instinct runs through the whole build: **the LLM extracts and phrases; Python
-decides.** Dates, decay, span-location, dedupe banding, and the draft date-guard are all
-deterministic and unit-tested, because those are the parts a user has to trust and I have
-to defend.
-
-## 6. Architecture & running locally
+## 4. Architecture & running locally
 
 ```
 Next.js (web) ──HTTP──> FastAPI (api) ──> Postgres + pgvector
