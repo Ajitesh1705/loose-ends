@@ -1,0 +1,24 @@
+{
+  "id": "coach_05",
+  "segment": "coach",
+  "kind": "session_note",
+  "channel_ts": "2026-07-20T11:00:00Z",
+  "contact_hint": "Priyanka Rao",
+  "expected": [
+    {
+      "direction": "they_owe",
+      "who": "Priyanka Rao",
+      "what": "Confirm sign-off on the plan",
+      "due_at": "2026-07-22",
+      "needs_review": false
+    },
+    {
+      "direction": "i_owe",
+      "who": "Priyanka Rao",
+      "what": "Book the gym assessment",
+      "due_at": null,
+      "needs_review": true
+    }
+  ],
+  "merge_group": null
+}

@@ -1,0 +1,17 @@
+{
+  "id": "coach_07",
+  "segment": "coach",
+  "kind": "whatsapp_export",
+  "channel_ts": "2026-07-21T18:00:00Z",
+  "contact_hint": "Dana Whitfield",
+  "expected": [
+    {
+      "direction": "they_owe",
+      "who": "Dana Whitfield",
+      "what": "Send her food log",
+      "due_at": "2026-07-23",
+      "needs_review": true
+    }
+  ],
+  "merge_group": null
+}

@@ -1,0 +1,24 @@
+{
+  "id": "coach_09",
+  "segment": "coach",
+  "kind": "session_note",
+  "channel_ts": "2026-07-23T12:00:00Z",
+  "contact_hint": "Priyanka Rao",
+  "expected": [
+    {
+      "direction": "i_owe",
+      "who": "Priyanka Rao",
+      "what": "Send the intake questionnaire",
+      "due_at": "2026-07-24",
+      "needs_review": false
+    },
+    {
+      "direction": "i_owe",
+      "who": "Priyanka Rao",
+      "what": "Email the class schedule",
+      "due_at": null,
+      "needs_review": false
+    }
+  ],
+  "merge_group": null
+}

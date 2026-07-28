@@ -1,0 +1,17 @@
+{
+  "id": "coach_03",
+  "segment": "coach",
+  "kind": "session_note",
+  "channel_ts": "2026-07-23T09:30:00Z",
+  "contact_hint": "Marcus Delgado",
+  "expected": [
+    {
+      "direction": "i_owe",
+      "who": "Marcus Delgado",
+      "what": "Put together the deload week plan",
+      "due_at": "2026-07-28",
+      "needs_review": false
+    }
+  ],
+  "merge_group": null
+}

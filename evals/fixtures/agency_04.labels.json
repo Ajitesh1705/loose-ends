@@ -1,0 +1,17 @@
+{
+  "id": "agency_04",
+  "segment": "agency",
+  "kind": "email_thread",
+  "channel_ts": "2026-07-21T10:00:00Z",
+  "contact_hint": "Tom Alvarez",
+  "expected": [
+    {
+      "direction": "i_owe",
+      "who": "Tom Alvarez",
+      "what": "Send the updated invoice",
+      "due_at": "2026-07-24",
+      "needs_review": false
+    }
+  ],
+  "merge_group": "g_tom"
+}

@@ -1,0 +1,17 @@
+{
+  "id": "agency_03",
+  "segment": "agency",
+  "kind": "call_transcript",
+  "channel_ts": "2026-07-20T14:00:00Z",
+  "contact_hint": "Tom Alvarez",
+  "expected": [
+    {
+      "direction": "i_owe",
+      "who": "Tom Alvarez",
+      "what": "Send the SOW",
+      "due_at": "2026-07-24",
+      "needs_review": false
+    }
+  ],
+  "merge_group": "g_tom"
+}

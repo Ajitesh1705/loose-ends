@@ -1,0 +1,17 @@
+{
+  "id": "agency_01",
+  "segment": "agency",
+  "kind": "call_transcript",
+  "channel_ts": "2026-07-21T15:00:00Z",
+  "contact_hint": "Priya Raman",
+  "expected": [
+    {
+      "direction": "i_owe",
+      "who": "Priya Raman",
+      "what": "Send the Q3 report",
+      "due_at": "2026-07-23",
+      "needs_review": false
+    }
+  ],
+  "merge_group": "g_q3"
+}

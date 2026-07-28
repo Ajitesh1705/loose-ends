@@ -1,0 +1,24 @@
+{
+  "id": "free_03",
+  "segment": "freelancer",
+  "kind": "whatsapp_export",
+  "channel_ts": "2026-07-23T15:00:00Z",
+  "contact_hint": "Sam Doyle",
+  "expected": [
+    {
+      "direction": "i_owe",
+      "who": "Sam Doyle",
+      "what": "Ship the final assets",
+      "due_at": "2026-07-27",
+      "needs_review": true
+    },
+    {
+      "direction": "they_owe",
+      "who": "Sam Doyle",
+      "what": "Review the mockup",
+      "due_at": null,
+      "needs_review": true
+    }
+  ],
+  "merge_group": null
+}

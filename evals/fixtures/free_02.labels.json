@@ -1,0 +1,24 @@
+{
+  "id": "free_02",
+  "segment": "freelancer",
+  "kind": "whatsapp_export",
+  "channel_ts": "2026-07-22T12:00:00Z",
+  "contact_hint": "Alex Kim",
+  "expected": [
+    {
+      "direction": "i_owe",
+      "who": "Alex Kim",
+      "what": "Send the updated invoice",
+      "due_at": "2026-07-24",
+      "needs_review": false
+    },
+    {
+      "direction": "i_owe",
+      "who": "Alex Kim",
+      "what": "Adjust the header",
+      "due_at": null,
+      "needs_review": false
+    }
+  ],
+  "merge_group": null
+}

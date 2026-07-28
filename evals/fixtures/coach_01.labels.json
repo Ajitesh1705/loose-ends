@@ -1,0 +1,24 @@
+{
+  "id": "coach_01",
+  "segment": "coach",
+  "kind": "session_note",
+  "channel_ts": "2026-07-21T09:00:00Z",
+  "contact_hint": "Marcus Delgado",
+  "expected": [
+    {
+      "direction": "i_owe",
+      "who": "Marcus Delgado",
+      "what": "Send the revised training program",
+      "due_at": "2026-07-24",
+      "needs_review": false
+    },
+    {
+      "direction": "they_owe",
+      "who": "Marcus Delgado",
+      "what": "Log workouts and send them",
+      "due_at": "2026-07-24",
+      "needs_review": true
+    }
+  ],
+  "merge_group": null
+}

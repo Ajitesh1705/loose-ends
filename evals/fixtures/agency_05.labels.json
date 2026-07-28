@@ -1,0 +1,9 @@
+{
+  "id": "agency_05",
+  "segment": "agency",
+  "kind": "call_transcript",
+  "channel_ts": "2026-07-22T13:00:00Z",
+  "contact_hint": "Sofia Marin",
+  "expected": [],
+  "merge_group": null
+}

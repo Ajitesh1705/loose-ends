@@ -1,0 +1,17 @@
+{
+  "id": "agency_06",
+  "segment": "agency",
+  "kind": "email_thread",
+  "channel_ts": "2026-07-23T11:00:00Z",
+  "contact_hint": "Priya Raman",
+  "expected": [
+    {
+      "direction": "i_owe",
+      "who": "Priya Raman",
+      "what": "Send the creative refresh",
+      "due_at": "2026-08-03",
+      "needs_review": true
+    }
+  ],
+  "merge_group": null
+}

@@ -1,0 +1,17 @@
+{
+  "id": "free_01",
+  "segment": "freelancer",
+  "kind": "whatsapp_export",
+  "channel_ts": "2026-07-21T18:30:00Z",
+  "contact_hint": "Jordan Ellis",
+  "expected": [
+    {
+      "direction": "i_owe",
+      "who": "Jordan Ellis",
+      "what": "Send three logo concepts",
+      "due_at": "2026-07-22",
+      "needs_review": false
+    }
+  ],
+  "merge_group": null
+}

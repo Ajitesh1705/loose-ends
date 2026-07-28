@@ -1,0 +1,9 @@
+{
+  "id": "coach_02",
+  "segment": "coach",
+  "kind": "session_note",
+  "channel_ts": "2026-07-22T10:00:00Z",
+  "contact_hint": "Dana Whitfield",
+  "expected": [],
+  "merge_group": null
+}

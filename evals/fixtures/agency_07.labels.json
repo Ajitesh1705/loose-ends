@@ -1,0 +1,24 @@
+{
+  "id": "agency_07",
+  "segment": "agency",
+  "kind": "call_transcript",
+  "channel_ts": "2026-07-27T16:00:00Z",
+  "contact_hint": "Tom Alvarez",
+  "expected": [
+    {
+      "direction": "i_owe",
+      "who": "Tom Alvarez",
+      "what": "Send revised pricing",
+      "due_at": "2026-07-28",
+      "needs_review": false
+    },
+    {
+      "direction": "they_owe",
+      "who": "Tom Alvarez",
+      "what": "Review the pricing and respond",
+      "due_at": null,
+      "needs_review": false
+    }
+  ],
+  "merge_group": null
+}

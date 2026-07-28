@@ -323,3 +323,41 @@ currently name-only; real contacts need email/phone identity.
   (December). Tightened so month names only count when paired with a day/year. A good
   argument for keeping the guard deterministic and testable: an LLM self-check would never
   have surfaced that class of bug so cheaply.
+
+---
+
+## Phase 8 — Eval harness
+
+**What changed**
+
+- `evals/make_fixtures.py` — 24 hand-labelled fixtures (coach 9 / agency 8 / freelancer
+  7) with every hard case: politeness, retraction, third-party, conditional, ambiguous
+  anchor, a cross-channel merge pair (+ a distinct pair that must NOT merge), and
+  zero-commitment threads. Labels are hand-authored ground truth, not pipeline output.
+- `evals/run_eval.py` — runs the real pipeline (extraction/provenance/dates DB-free;
+  dedupe in a throwaway `looseends_eval` database so it can't merge against demo data).
+  Prints per-segment + overall P/R/F1, hallucinated-deadline rate, unlocatable-quote
+  rate, dedupe P/R, review-queue precision, latency + cost; writes `evals/RESULTS.md`
+  with a prose failure taxonomy.
+
+**Numbers (honest, un-tuned)**
+
+- Extraction **P 0.81 / R 0.74 / F1 0.77**; **hallucinated-deadline 0%**;
+  **unlocatable-quote 0%**; **dedupe 1.00 / 1.00**; review-queue precision 0.50;
+  ~2s and **~$0.0005 per source**.
+- The headline finding written up in RESULTS.md: **most of the P/R gap is scoring
+  strictness, not extraction failure** — half the misses are paraphrase drift on `what`
+  ("Send the invoice" vs "Get the invoice to you"), the same commitment worded
+  differently and dinged by the 0.80 lexical bar. Scoring `what` on embeddings would
+  recover most of it. The other two categories (inconsistent third-party handling,
+  dropped reciprocal clauses) are real and get concrete remedies.
+
+**What surprised me**
+
+- The **first dedupe run showed precision 0.40** — the eval was merging fixtures against
+  the *live demo* commitments (Priya and Jordan exist in both). Isolating the dedupe pass
+  in a fresh database fixed it to 1.00. A sharp reminder that an eval sharing state with
+  the app under test will quietly lie to you.
+- `resolve_due` treats "next \<weekday\>" as *next week's* weekday; I avoided that phrasing
+  in fixtures rather than paper over it. "this weekend" isn't in the resolver's rule set
+  at all → resolves to null + review, which is acceptable but costs date-exact recall.
